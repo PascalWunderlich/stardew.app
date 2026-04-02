@@ -281,8 +281,8 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 		async (handle: FileSystemFileHandle) => {
 			const file = await handle.getFile();
 			const text = await file.text();
-			// parseSaveFile returns a plain object array that conforms to PlayerType[]
-			const players = parseSaveFile(text) as unknown as PlayerType[];
+			// parseSaveFile returns any[]; shape matches PlayerType[]
+			const players = parseSaveFile(text) as PlayerType[];
 			await fetch("/api/saves", {
 				method: "POST",
 				body: JSON.stringify(players),
@@ -319,8 +319,8 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 				if (autoSyncFileHandleRef.current) {
 					try {
 						await syncFromFileHandle(autoSyncFileHandleRef.current);
-					} catch {
-						// silently ignore sync errors on background refresh
+					} catch (err) {
+						console.error("[auto-sync] background re-sync failed:", err);
 					}
 				}
 			},

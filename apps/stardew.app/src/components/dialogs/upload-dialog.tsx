@@ -151,10 +151,11 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 			toast.success("Auto-sync enabled", {
 				description: "Your save file will be re-synced every 15 minutes.",
 			});
-		} catch (err: any) {
-			if (err?.name !== "AbortError") {
+		} catch (err: unknown) {
+			const e = err as { name?: string; message?: string };
+			if (e?.name !== "AbortError") {
 				toast.error("Auto-sync failed", {
-					description: err?.message ?? "Could not start auto-sync.",
+					description: e?.message ?? "Could not start auto-sync.",
 				});
 			}
 		}
