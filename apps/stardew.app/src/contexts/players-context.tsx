@@ -7,6 +7,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 
@@ -27,6 +28,7 @@ import type { WalnutRet } from "@/lib/parsers/walnuts";
 import type { BundleWithStatus } from "@/types/bundles";
 import type { AnimalsData } from "@/types/data";
 import type { DeepPartial } from "react-hook-form";
+import { parseSaveFile } from "@/lib/file";
 
 export interface PlayerType {
 	_id: string;
@@ -54,6 +56,10 @@ interface PlayersContextProps {
 	patchPlayer: (patch: DeepPartial<PlayerType>) => Promise<void>;
 	activePlayer?: PlayerType;
 	setActivePlayer: (player?: PlayerType) => void;
+	autoSyncActive: boolean;
+	autoSyncLastSynced: Date | null;
+	startAutoSync: () => Promise<void>;
+	stopAutoSync: () => void;
 }
 
 export const PlayersContext = createContext<PlayersContextProps>({
@@ -61,6 +67,10 @@ export const PlayersContext = createContext<PlayersContextProps>({
 	uploadPlayers: () => {},
 	patchPlayer: () => Promise.resolve(),
 	setActivePlayer: () => {},
+	autoSyncActive: false,
+	autoSyncLastSynced: null,
+	startAutoSync: async () => {},
+	stopAutoSync: () => {},
 });
 
 /**
@@ -191,6 +201,15 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 		[players, activePlayerId],
 	);
 
+	const [autoSyncActive, setAutoSyncActive] = useState(false);
+	const [autoSyncLastSynced, setAutoSyncLastSynced] = useState<Date | null>(
+		null,
+	);
+	const autoSyncFileHandleRef = useRef<FileSystemFileHandle | null>(null);
+	const autoSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+		null,
+	);
+
 	useEffect(() => {
 		if (!activePlayerId && players.length > 0) {
 			// first lets check if local storage contains the last set player
@@ -255,6 +274,60 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 		[api, setActivePlayerId],
 	);
 
+	const syncFromFileHandle = useCallback(
+		async (handle: FileSystemFileHandle) => {
+			const file = await handle.getFile();
+			const text = await file.text();
+			const players = parseSaveFile(text);
+			await fetch("/api/saves", {
+				method: "POST",
+				body: JSON.stringify(players),
+			});
+			await api.mutate(players as PlayerType[]);
+			setActivePlayerId(players[0]._id);
+			setAutoSyncLastSynced(new Date());
+		},
+		[api],
+	);
+
+	const startAutoSync = useCallback(async () => {
+		if (typeof window === "undefined" || !("showOpenFilePicker" in window)) {
+			throw new Error(
+				"Auto-sync requires a Chromium-based browser (Chrome, Edge, or Opera).",
+			);
+		}
+		const [handle] = await (window as any).showOpenFilePicker({
+			types: [{ description: "Stardew Valley Save File", accept: { "*/*": [] } }],
+			multiple: false,
+		});
+		autoSyncFileHandleRef.current = handle;
+		await syncFromFileHandle(handle);
+		const intervalId = setInterval(
+			async () => {
+				if (autoSyncFileHandleRef.current) {
+					try {
+						await syncFromFileHandle(autoSyncFileHandleRef.current);
+					} catch {
+						// silently ignore sync errors on background refresh
+					}
+				}
+			},
+			15 * 60 * 1000,
+		);
+		autoSyncIntervalRef.current = intervalId;
+		setAutoSyncActive(true);
+	}, [syncFromFileHandle]);
+
+	const stopAutoSync = useCallback(() => {
+		if (autoSyncIntervalRef.current !== null) {
+			clearInterval(autoSyncIntervalRef.current);
+			autoSyncIntervalRef.current = null;
+		}
+		autoSyncFileHandleRef.current = null;
+		setAutoSyncActive(false);
+		setAutoSyncLastSynced(null);
+	}, []);
+
 	const setActivePlayer = useCallback((player?: PlayerType) => {
 		if (!player) {
 			setActivePlayerId(undefined);
@@ -277,6 +350,10 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 				patchPlayer,
 				activePlayer,
 				setActivePlayer,
+				autoSyncActive,
+				autoSyncLastSynced,
+				startAutoSync,
+				stopAutoSync,
 			}}
 		>
 			{children}

@@ -128,11 +128,34 @@ const InstructionsDialog = ({
 };
 
 export const UploadDialog = ({ open, setOpen }: Props) => {
-	const { activePlayer, uploadPlayers } = useContext(PlayersContext);
+	const {
+		activePlayer,
+		uploadPlayers,
+		autoSyncActive,
+		autoSyncLastSynced,
+		startAutoSync,
+		stopAutoSync,
+	} = useContext(PlayersContext);
 	const [instructionsOpen, setInstructionsOpen] = useState(false);
 	const [selectedPlatform, setSelectedPlatform] = useState<
 		"Mac" | "Windows" | "Linux" | "Switch"
 	>("Mac");
+
+	const handleAutoSync = async () => {
+		try {
+			await startAutoSync();
+			setOpen(false);
+			toast.success("Auto-sync enabled", {
+				description: "Your save file will be re-synced every 15 minutes.",
+			});
+		} catch (err: any) {
+			if (err?.name !== "AbortError") {
+				toast.error("Auto-sync failed", {
+					description: err?.message ?? "Could not start auto-sync.",
+				});
+			}
+		}
+	};
 
 	const handleChange = (file: File) => {
 		setOpen(false);
@@ -259,6 +282,37 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 								Nintendo Switch
 							</Button>
 						</div>
+					</div>
+					{/* Auto-sync Section */}
+					<div className="space-y-2 rounded-lg border border-dashed p-3 dark:border-neutral-700">
+						<div className="text-left">
+							<p className="font-medium">Auto-sync (PC only)</p>
+							<p className="text-muted-foreground text-sm">
+								{autoSyncActive
+									? `Auto-sync is active. Last synced: ${autoSyncLastSynced ? autoSyncLastSynced.toLocaleTimeString() : "just now"}. Re-syncs every 15 minutes.`
+									: "Select your save file once and stardew.app will automatically reload it every 15 minutes. Requires Chrome or Edge."}
+							</p>
+						</div>
+						{autoSyncActive ? (
+							<Button
+								variant="destructive"
+								className="w-full"
+								onClick={() => {
+									stopAutoSync();
+									toast.info("Auto-sync stopped.");
+								}}
+							>
+								Stop Auto-sync
+							</Button>
+						) : (
+							<Button
+								variant="secondary"
+								className="w-full"
+								onClick={handleAutoSync}
+							>
+								Enable Auto-sync
+							</Button>
+						)}
 					</div>
 				</DialogContent>
 			</Dialog>

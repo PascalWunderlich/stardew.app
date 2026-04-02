@@ -57,7 +57,7 @@ export function Topbar() {
 
 	const [isDevelopment, setIsDevelopment] = useState(false);
 
-	const { activePlayer } = useContext(PlayersContext);
+	const { activePlayer, autoSyncActive } = useContext(PlayersContext);
 
 	useEffect(() => {
 		setIsDevelopment(parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!) === 1);
@@ -101,6 +101,9 @@ export function Topbar() {
 						data-umami-event="Upload save"
 						className="hover:bg-green-500 hover:text-neutral-50 dark:hover:bg-green-500 dark:hover:text-neutral-50"
 					>
+						{autoSyncActive && (
+							<span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-green-500" />
+						)}
 						Upload Save
 					</Button>
 					{/* Not Logged In */}
