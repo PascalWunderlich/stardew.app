@@ -6,7 +6,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { PlayersContext } from "@/contexts/players-context";
+import {
+	AUTO_SYNC_INTERVAL_MS,
+	PlayersContext,
+} from "@/contexts/players-context";
 import { parseSaveFile } from "@/lib/file";
 import { useContext, useState } from "react";
 import Dropzone from "react-dropzone";
@@ -289,8 +292,8 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 							<p className="font-medium">Auto-sync (PC only)</p>
 							<p className="text-muted-foreground text-sm">
 								{autoSyncActive
-									? `Auto-sync is active. Last synced: ${autoSyncLastSynced ? autoSyncLastSynced.toLocaleTimeString() : "just now"}. Re-syncs every 15 minutes.`
-									: "Select your save file once and stardew.app will automatically reload it every 15 minutes. Requires Chrome or Edge."}
+									? `Auto-sync is active. Last synced: ${autoSyncLastSynced ? autoSyncLastSynced.toLocaleTimeString() : "just now"}. Re-syncs every ${AUTO_SYNC_INTERVAL_MS / 60_000} minutes.`
+									: `Select your save file once and stardew.app will automatically reload it every ${AUTO_SYNC_INTERVAL_MS / 60_000} minutes. Requires Chrome or Edge.`}
 							</p>
 						</div>
 						{autoSyncActive ? (

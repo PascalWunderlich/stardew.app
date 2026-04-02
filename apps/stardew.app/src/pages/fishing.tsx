@@ -113,6 +113,26 @@ const bubbleColors: Record<string, string> = {
 	"2": "border-green-900 bg-green-500/20", // completed
 };
 
+function getLocationGroup(loc: string): string {
+	if (loc === "Ocean" || loc.includes("Beach") || loc === "Fishing Pole: Ocean")
+		return "Ocean";
+	if (loc === "River" || loc.includes("River") || loc.includes("Waterfalls"))
+		return "River";
+	if (loc.includes("Mountain Lake")) return "Mountain Lake";
+	if (loc.includes("Forest") || loc === "Secret Woods") return "Forest";
+	if (
+		loc.includes("Ginger Island") ||
+		loc === "Pirate Cove" ||
+		loc === "Volcano Caldera" ||
+		loc === "Turtle"
+	)
+		return "Ginger Island";
+	if (loc.includes("Mines") || loc === "Mutant Bug Lair" || loc.includes("Witch"))
+		return "Mines";
+	if (loc.includes("Crab Pot")) return "Crab Pot";
+	return "Other";
+}
+
 export default function Fishing() {
 	const [open, setIsOpen] = useState(false);
 	const [fish, setFish] = useState<FishType | null>(null);
@@ -419,74 +439,9 @@ export default function Fishing() {
 									if ("locations" in f) {
 										if (_locationFilter === "all") return true;
 										const locs = f.locations as string[];
-										switch (_locationFilter) {
-											case "Ocean":
-												return locs.some(
-													(l) =>
-														l === "Ocean" ||
-														l.includes("Beach") ||
-														l === "Fishing Pole: Ocean",
-												);
-											case "River":
-												return locs.some(
-													(l) =>
-														l === "River" ||
-														l.includes("River") ||
-														l.includes("Waterfalls"),
-												);
-											case "Mountain Lake":
-												return locs.some((l) =>
-													l.includes("Mountain Lake"),
-												);
-											case "Forest":
-												return locs.some(
-													(l) =>
-														l.includes("Forest") ||
-														l === "Secret Woods",
-												);
-											case "Ginger Island":
-												return locs.some(
-													(l) =>
-														l.includes("Ginger Island") ||
-														l === "Pirate Cove" ||
-														l === "Volcano Caldera" ||
-														l === "Turtle",
-												);
-											case "Mines":
-												return locs.some(
-													(l) =>
-														l.includes("Mines") ||
-														l === "Mutant Bug Lair" ||
-														l.includes("Witch"),
-												);
-											case "Crab Pot":
-												return locs.some((l) =>
-													l.includes("Crab Pot"),
-												);
-											case "Other":
-												return locs.some(
-													(l) =>
-														!l.includes("Ocean") &&
-														!l.includes("Beach") &&
-														l !== "Fishing Pole: Ocean" &&
-														l !== "River" &&
-														!l.includes("River") &&
-														!l.includes("Waterfalls") &&
-														!l.includes("Mountain Lake") &&
-														!l.includes("Forest") &&
-														l !== "Secret Woods" &&
-														!l.includes("Ginger Island") &&
-														l !== "Pirate Cove" &&
-														l !== "Volcano Caldera" &&
-														l !== "Turtle" &&
-														!l.includes("Mines") &&
-														l !== "Mutant Bug Lair" &&
-														!l.includes("Witch") &&
-														!l.includes("Crab Pot"),
-												);
-											default:
-												return true;
-										}
+										return locs.some(
+											(l) => getLocationGroup(l) === _locationFilter,
+										);
 									}
 									return true;
 								})

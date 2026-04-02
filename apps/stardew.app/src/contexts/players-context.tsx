@@ -30,6 +30,9 @@ import type { AnimalsData } from "@/types/data";
 import type { DeepPartial } from "react-hook-form";
 import { parseSaveFile } from "@/lib/file";
 
+/** How often the auto-sync feature re-reads and uploads the save file (15 minutes). */
+export const AUTO_SYNC_INTERVAL_MS = 15 * 60 * 1000;
+
 export interface PlayerType {
 	_id: string;
 	general?: GeneralRet;
@@ -278,12 +281,13 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 		async (handle: FileSystemFileHandle) => {
 			const file = await handle.getFile();
 			const text = await file.text();
-			const players = parseSaveFile(text);
+			// parseSaveFile returns a plain object array that conforms to PlayerType[]
+			const players = parseSaveFile(text) as unknown as PlayerType[];
 			await fetch("/api/saves", {
 				method: "POST",
 				body: JSON.stringify(players),
 			});
-			await api.mutate(players as PlayerType[]);
+			await api.mutate(players);
 			setActivePlayerId(players[0]._id);
 			setAutoSyncLastSynced(new Date());
 		},
@@ -296,7 +300,15 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 				"Auto-sync requires a Chromium-based browser (Chrome, Edge, or Opera).",
 			);
 		}
-		const [handle] = await (window as any).showOpenFilePicker({
+		// showOpenFilePicker is part of the File System Access API (Chrome/Edge)
+		const showOpenFilePicker = (
+			window as Window & {
+				showOpenFilePicker: (
+					options?: object,
+				) => Promise<FileSystemFileHandle[]>;
+			}
+		).showOpenFilePicker;
+		const [handle] = await showOpenFilePicker({
 			types: [{ description: "Stardew Valley Save File", accept: { "*/*": [] } }],
 			multiple: false,
 		});
@@ -312,7 +324,7 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 					}
 				}
 			},
-			15 * 60 * 1000,
+			AUTO_SYNC_INTERVAL_MS,
 		);
 		autoSyncIntervalRef.current = intervalId;
 		setAutoSyncActive(true);
