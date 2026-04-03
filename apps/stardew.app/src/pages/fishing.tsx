@@ -31,7 +31,7 @@ import { useMultiSelect } from "@/contexts/multi-select-context";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
-import { IconCloud, IconMapPin } from "@tabler/icons-react";
+import { IconCalendar, IconCloud, IconMapPin } from "@tabler/icons-react";
 
 const semverGte = require("semver/functions/gte");
 
@@ -408,7 +408,7 @@ export default function Fishing() {
 									title="Season"
 									_filter={_seasonFilter}
 									data={seasons}
-									icon={IconCloud}
+									icon={IconCalendar}
 									setFilter={setSeasonFilter}
 								/>
 								<FilterSearch

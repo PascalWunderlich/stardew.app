@@ -86,7 +86,6 @@ export default function Crafting() {
 		}
 	}, [activePlayer]);
 
-	
 	const achievements_crafting = useMemo(
 		() => Object.values(achievements).filter((a) => a.description.includes("Craft")),
 		[],

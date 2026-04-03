@@ -91,7 +91,6 @@ export default function Cooking() {
 			.length;
 	}, [activePlayer]);
 
-	
 	const achievements_cooking = useMemo(
 		() => Object.values(achievements).filter((a) => a.description.includes("Cook")),
 		[],
