@@ -132,7 +132,6 @@ const InstructionsDialog = ({
 
 export const UploadDialog = ({ open, setOpen }: Props) => {
 	const {
-		activePlayer,
 		uploadPlayers,
 		autoSyncActive,
 		autoSyncLastSynced,
@@ -167,11 +166,18 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 		try {
 			const res = await fetch("/api/local-save", {
 				method: "POST",
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ saveName }),
 			});
 			if (!res.ok) {
-				const err = await res.json();
-				throw new Error(err.error ?? "Failed to load save.");
+				let message = "Failed to load save.";
+				try {
+					const err = await res.json();
+					message = err.error ?? message;
+				} catch {
+					// response wasn't JSON (e.g. network error body)
+				}
+				throw new Error(message);
 			}
 			const xml = await res.text();
 			const players = parseSaveFile(xml);
