@@ -91,6 +91,11 @@ export default function Cooking() {
 			.length;
 	}, [activePlayer]);
 
+	const achievements_cooking = useMemo(
+		() => Object.values(achievements).filter((a) => a.description.includes("Cook")),
+		[],
+	);
+
 	// tracks how many recipes the players knows but has not cooked
 	const knownCount = useMemo(() => {
 		if (!activePlayer || !activePlayer.cooking?.recipes) return 0;
@@ -156,8 +161,7 @@ export default function Cooking() {
 								</AccordionTrigger>
 								<AccordionContent asChild>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-										{Object.values(achievements)
-											.filter((a) => a.description.includes("Cook"))
+										{achievements_cooking
 											.map((achievement) => {
 												const { completed, additionalDescription } =
 													getAchievementProgress(achievement.name);

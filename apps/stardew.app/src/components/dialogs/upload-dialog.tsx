@@ -11,7 +11,7 @@ import {
 	PlayersContext,
 } from "@/contexts/players-context";
 import { parseSaveFile } from "@/lib/file";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Dropzone from "react-dropzone";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -132,7 +132,6 @@ const InstructionsDialog = ({
 
 export const UploadDialog = ({ open, setOpen }: Props) => {
 	const {
-		activePlayer,
 		uploadPlayers,
 		autoSyncActive,
 		autoSyncLastSynced,
@@ -143,6 +142,56 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 	const [selectedPlatform, setSelectedPlatform] = useState<
 		"Mac" | "Windows" | "Linux" | "Switch"
 	>("Mac");
+
+	const [isDevelopment, setIsDevelopment] = useState(false);
+	const [localSaves, setLocalSaves] = useState<string[]>([]);
+	const [localSavesLoading, setLocalSavesLoading] = useState(false);
+
+	useEffect(() => {
+		setIsDevelopment(parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT ?? "0") === 1);
+	}, []);
+
+	// When the dialog opens in dev mode, fetch the available local saves
+	useEffect(() => {
+		if (!open || !isDevelopment) return;
+		setLocalSavesLoading(true);
+		fetch("/api/local-save")
+			.then((r) => r.json())
+			.then((data) => setLocalSaves(data.saves ?? []))
+			.catch(() => setLocalSaves([]))
+			.finally(() => setLocalSavesLoading(false));
+	}, [open, isDevelopment]);
+
+	const handleLoadLocalSave = async (saveName: string) => {
+		try {
+			const res = await fetch("/api/local-save", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ saveName }),
+			});
+			if (!res.ok) {
+				let message = "Failed to load save.";
+				try {
+					const err = await res.json();
+					message = err.error ?? message;
+				} catch {
+					// response wasn't JSON (e.g. network error body)
+				}
+				throw new Error(message);
+			}
+			const xml = await res.text();
+			const players = parseSaveFile(xml);
+			await uploadPlayers(players);
+			setOpen(false);
+			toast.success("Save loaded", {
+				description: `Loaded save: ${saveName}`,
+			});
+		} catch (err: unknown) {
+			toast.error("Failed to load local save", {
+				description: err instanceof Error ? err.message : "Unknown error.",
+			});
+		}
+	};
 
 	const handleAutoSync = async () => {
 		try {
@@ -287,6 +336,40 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 							</Button>
 						</div>
 					</div>
+					{/* Local Save Loader – only visible when running locally (NEXT_PUBLIC_DEVELOPMENT=1) */}
+					{isDevelopment && (
+						<div className="space-y-2 rounded-lg border border-dashed p-3 dark:border-neutral-700">
+							<div className="text-left">
+								<p className="font-medium">Load from local disk</p>
+								<p className="text-muted-foreground text-sm">
+									Reads your Stardew Valley save files directly from this
+									machine, bypassing browser file-picker restrictions.
+								</p>
+							</div>
+							{localSavesLoading ? (
+								<p className="text-muted-foreground text-sm">
+									Scanning for save files…
+								</p>
+							) : localSaves.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No save files found on this machine.
+								</p>
+							) : (
+								<div className="flex flex-col gap-1">
+									{localSaves.map((saveName) => (
+										<Button
+											key={saveName}
+											variant="secondary"
+											className="w-full justify-start truncate"
+											onClick={() => handleLoadLocalSave(saveName)}
+										>
+											{saveName}
+										</Button>
+									))}
+								</div>
+							)}
+						</div>
+					)}
 					{/* Auto-sync Section */}
 					<div className="space-y-2 rounded-lg border border-dashed p-3 dark:border-neutral-700">
 						<div className="text-left">

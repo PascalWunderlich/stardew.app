@@ -72,7 +72,13 @@ export default function Museum() {
 	const [artifactSearch, setArtifactSearch] = useState("");
 	const [mineralSearch, setMineralSearch] = useState("");
 
-	const getAchievementProgress = (name: string) => {
+
+	const achievements_museum = useMemo(
+		() => Object.values(achievements).filter((a) => a.description.includes("museum")),
+		[],
+	);
+
+		const getAchievementProgress = (name: string) => {
 		let completed = false;
 		let additionalDescription = "";
 
@@ -92,17 +98,24 @@ export default function Museum() {
 		return { completed, additionalDescription };
 	};
 
-	const remainingDonations = {
-		artifacts:
-			Object.values(museum.artifacts).length - museumArtifactCollected.size,
-		minerals:
-			Object.values(museum.minerals).length - museumMineralCollected.size,
-	};
+	const remainingDonations = useMemo(
+		() => ({
+			artifacts:
+				Object.values(museum.artifacts).length - museumArtifactCollected.size,
+			minerals:
+				Object.values(museum.minerals).length - museumMineralCollected.size,
+		}),
+		[museumArtifactCollected, museumMineralCollected],
+	);
 
 	// Calculate donatedCount for artifacts based on filtered items
-	const donatedArtifactCount = Object.values(museum.artifacts).filter((f) =>
-		museumArtifactCollected.has(f.itemID),
-	).length;
+	const donatedArtifactCount = useMemo(
+		() =>
+			Object.values(museum.artifacts).filter((f) =>
+				museumArtifactCollected.has(f.itemID),
+			).length,
+		[museumArtifactCollected],
+	);
 
 	// Custom bulk action handler for museum
 	const { patchPlayer } = usePlayers();
@@ -173,8 +186,7 @@ export default function Museum() {
 								</AccordionTrigger>
 								<AccordionContent asChild>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-										{Object.values(achievements)
-											.filter((a) => a.description.includes("museum"))
+										{achievements_museum
 											.sort((a, b) => {
 												if (a.name === "A Complete Collection") return 1;
 												if (b.name === "A Complete Collection") return -1;

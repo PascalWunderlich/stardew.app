@@ -261,7 +261,7 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 				{ optimisticData: patchPlayers },
 			);
 		},
-		[api],
+		[api, activePlayer],
 	);
 
 	const uploadPlayers = useCallback(

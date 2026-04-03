@@ -60,7 +60,7 @@ import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@react-hook/media-query";
 import { IconClock, IconSettings } from "@tabler/icons-react";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const ItemQualityToString = {
 	"0": "Normal",
@@ -548,6 +548,11 @@ export default function Bundles() {
 		setIncompleteCount(_incompleteCount);
 	}, [activePlayer]);
 
+	const achievements_bundles = useMemo(
+		() => Object.values(achievements).filter((a) => a.description.includes("Community")),
+		[],
+	);
+
 	const getAchievementProgress = (name: string) => {
 		if (bundles.length < 1) {
 			// Guard for this function being called prior to bundles being loaded
@@ -615,8 +620,7 @@ export default function Bundles() {
 						Bundle Tracker
 					</h1>
 					<AccordionSection title="Achievements" key="Achievements">
-						{Object.values(achievements)
-							.filter((a) => a.description.includes("Community"))
+						{achievements_bundles
 							.map((achievement) => {
 								const { completed, additionalDescription } =
 									getAchievementProgress(achievement.name);
