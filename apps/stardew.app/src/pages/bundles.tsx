@@ -2,6 +2,8 @@ import Head from "next/head";
 
 import achievements from "@/data/achievements.json";
 import bundlesData from "@/data/bundles.json";
+import fishData from "@/data/fish.json";
+import shippingData from "@/data/shipping.json";
 
 import {
 	Bundle,
@@ -42,6 +44,7 @@ import {
 	bundleItemName,
 } from "@/components/cards/bundle-item-card";
 import { UnblurDialog } from "@/components/dialogs/unblur-dialog";
+import { FilterSearch } from "@/components/filter-btn";
 import BundleSheet from "@/components/sheets/bundle-sheet";
 import {
 	Accordion,
@@ -55,7 +58,7 @@ import { Progress } from "@/components/ui/progress";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@react-hook/media-query";
-import { IconSettings } from "@tabler/icons-react";
+import { IconClock, IconSettings } from "@tabler/icons-react";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 
@@ -65,6 +68,41 @@ export const ItemQualityToString = {
 	"2": "Gold",
 	"3": "Iridium",
 };
+
+// Build a lookup map from itemID → seasons using shipping and fish data
+const itemSeasonLookup: Record<string, string[]> = {};
+for (const [id, item] of Object.entries(
+	shippingData as Record<string, { seasons: string[] }>,
+)) {
+	itemSeasonLookup[id] = item.seasons;
+}
+for (const [id, item] of Object.entries(
+	fishData as Record<string, { seasons?: string[]; trapFish?: boolean }>,
+)) {
+	if (!item.trapFish && item.seasons) {
+		itemSeasonLookup[id] = item.seasons;
+	}
+}
+
+// Manual overrides: shipping.json tracks when items can be shipped (including from storage),
+// but for bundle purposes we need when items are freshly obtainable.
+const itemSeasonOverrides: Record<string, string[]> = {
+	"296": ["Spring"], // Salmonberry – only obtainable during Salmonberry Season (Spring 15-18)
+	"397": ["Summer"], // Sea Urchin – Summer beach forage only
+	"430": ["Spring", "Summer", "Fall"], // Truffle – pigs only go outside in non-Winter seasons
+	"613": ["Fall"], // Apple – Apple Trees produce in Fall only
+};
+for (const [id, seasons] of Object.entries(itemSeasonOverrides)) {
+	itemSeasonLookup[id] = seasons;
+}
+
+const bundleSeasons = [
+	{ value: "all", label: "All Seasons" },
+	{ value: "Spring", label: "Spring" },
+	{ value: "Summer", label: "Summer" },
+	{ value: "Fall", label: "Fall" },
+	{ value: "Winter", label: "Winter" },
+];
 
 const bubbleColors: Record<string, string> = {
 	"0": "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950", // unknown or not completed
@@ -439,6 +477,7 @@ export default function Bundles() {
 	let [incompleteCount, setIncompleteCount] = useState(0);
 	let [filter, setFilter] = useState("all");
 	let [search, setSearch] = useState("");
+	let [_seasonFilter, setSeasonFilter] = useState("all");
 
 	const { activePlayer, patchPlayer } = usePlayers();
 
@@ -624,6 +663,13 @@ export default function Bundles() {
 								<span className="align-middle">Complete ({completeCount})</span>
 							</ToggleGroupItem>
 						</ToggleGroup>
+						<FilterSearch
+							title="Season"
+							_filter={_seasonFilter}
+							data={bundleSeasons}
+							icon={IconClock}
+							setFilter={setSeasonFilter}
+						/>
 					</div>
 					{/* Search Bar Row */}
 					<div className="mt-2 w-full">
@@ -687,6 +733,24 @@ export default function Bundles() {
 												default:
 													return true;
 											}
+										})
+										.filter((item) => {
+											if (_seasonFilter === "all") return true;
+											if (isRandomizer(item)) {
+												// Show randomizer if any option is obtainable in the season
+												return item.options.some((opt) => {
+													if (!("itemID" in opt)) return true;
+													const seasons =
+														itemSeasonLookup[opt.itemID];
+													if (!seasons || seasons.length === 0)
+														return true;
+													return seasons.includes(_seasonFilter);
+												});
+											}
+											const seasons =
+												itemSeasonLookup[item.itemID];
+											if (!seasons || seasons.length === 0) return true;
+											return seasons.includes(_seasonFilter);
 										})
 										.filter((item) => {
 											if (bundleMatched) {

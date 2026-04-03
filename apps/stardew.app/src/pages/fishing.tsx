@@ -29,7 +29,7 @@ import { useMultiSelect } from "@/contexts/multi-select-context";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
-import { IconClock, IconCloud } from "@tabler/icons-react";
+import { IconClock, IconCloud, IconMapPin } from "@tabler/icons-react";
 
 const semverGte = require("semver/functions/gte");
 
@@ -78,10 +78,60 @@ const seasons = [
 	},
 ];
 
+const times = [
+	{ value: "all", label: "All Times" },
+	{ value: "6AM - 11AM", label: "6AM - 11AM" },
+	{ value: "6AM - 12AM", label: "6AM - 12AM" },
+	{ value: "6AM - 1PM", label: "6AM - 1PM" },
+	{ value: "6AM - 2AM", label: "6AM - 2AM" },
+	{ value: "6AM - 2PM", label: "6AM - 2PM" },
+	{ value: "6AM - 7PM", label: "6AM - 7PM" },
+	{ value: "6AM - 8PM", label: "6AM - 8PM" },
+	{ value: "8AM - 6PM", label: "8AM - 6PM" },
+	{ value: "9AM - 2AM", label: "9AM - 2AM" },
+	{ value: "12PM - 2AM", label: "12PM - 2AM" },
+	{ value: "12PM - 4PM", label: "12PM - 4PM" },
+	{ value: "4PM - 2AM", label: "4PM - 2AM" },
+	{ value: "6PM - 2AM", label: "6PM - 2AM" },
+	{ value: "10PM - 2AM", label: "10PM - 2AM" },
+];
+
+const locations = [
+	{ value: "all", label: "All Locations" },
+	{ value: "Ocean", label: "Ocean" },
+	{ value: "River", label: "River" },
+	{ value: "Mountain Lake", label: "Mountain Lake" },
+	{ value: "Forest", label: "Forest" },
+	{ value: "Ginger Island", label: "Ginger Island" },
+	{ value: "Mines", label: "The Mines" },
+	{ value: "Crab Pot", label: "Crab Pot" },
+	{ value: "Other", label: "Other" },
+];
+
 const bubbleColors: Record<string, string> = {
 	"0": "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950", // incomplete
 	"2": "border-green-900 bg-green-500/20", // completed
 };
+
+function getLocationGroup(loc: string): string {
+	if (loc === "Ocean" || loc.includes("Beach") || loc === "Fishing Pole: Ocean")
+		return "Ocean";
+	if (loc === "River" || loc.includes("River") || loc.includes("Waterfalls"))
+		return "River";
+	if (loc.includes("Mountain Lake")) return "Mountain Lake";
+	if (loc.includes("Forest") || loc === "Secret Woods") return "Forest";
+	if (
+		loc.includes("Ginger Island") ||
+		loc === "Pirate Cove" ||
+		loc === "Volcano Caldera" ||
+		loc === "Turtle"
+	)
+		return "Ginger Island";
+	if (loc.includes("Mines") || loc === "Mutant Bug Lair" || loc.includes("Witch"))
+		return "Mines";
+	if (loc.includes("Crab Pot")) return "Crab Pot";
+	return "Other";
+}
 
 export default function Fishing() {
 	const [open, setIsOpen] = useState(false);
@@ -95,6 +145,8 @@ export default function Fishing() {
 	const [_filter, setFilter] = useState("all");
 	const [_weatherFilter, setWeatherFilter] = useState("both");
 	const [_seasonFilter, setSeasonFilter] = useState("all");
+	const [_timeFilter, setTimeFilter] = useState("all");
+	const [_locationFilter, setLocationFilter] = useState("all");
 
 	const [gameVersion, setGameVersion] = useState("1.6.0");
 
@@ -281,6 +333,20 @@ export default function Fishing() {
 									icon={IconClock}
 									setFilter={setSeasonFilter}
 								/>
+								<FilterSearch
+									title="Time"
+									_filter={_timeFilter}
+									data={times}
+									icon={IconClock}
+									setFilter={setTimeFilter}
+								/>
+								<FilterSearch
+									title="Location"
+									_filter={_locationFilter}
+									data={locations}
+									icon={IconMapPin}
+									setFilter={setLocationFilter}
+								/>
 								<Button
 									variant={isMultiSelectMode ? "default" : "outline"}
 									onClick={() => {
@@ -359,6 +425,23 @@ export default function Fishing() {
 									if ("seasons" in f && f.trapFish === false) {
 										if (_seasonFilter === "all") return true;
 										return f.seasons.includes(_seasonFilter);
+									}
+									return true;
+								})
+								.filter((f) => {
+									if ("time" in f && f.trapFish === false) {
+										if (_timeFilter === "all") return true;
+										return f.time === _timeFilter;
+									}
+									return true;
+								})
+								.filter((f) => {
+									if ("locations" in f) {
+										if (_locationFilter === "all") return true;
+										const locs = f.locations as string[];
+										return locs.some(
+											(l) => getLocationGroup(l) === _locationFilter,
+										);
 									}
 									return true;
 								})

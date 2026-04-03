@@ -170,6 +170,7 @@ export default function Shipping() {
 		.filter((i) => semverGte(gameVersion, i.minVersion))
 		.filter((i) => {
 			if (_seasonFilter === "all") return true;
+			if (i.seasons.length === 0) return true;
 			return i.seasons.includes(_seasonFilter);
 		})
 		.filter((i) => i.itemID in basicShipped).length;
@@ -340,6 +341,7 @@ export default function Shipping() {
 								})
 								.filter((i) => {
 									if (_seasonFilter === "all") return true;
+									if (i.seasons.length === 0) return true;
 									return i.seasons.includes(_seasonFilter);
 								})
 								.map((i) => (
