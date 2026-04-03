@@ -83,6 +83,11 @@ const seasons = [
 // In-game hours from 6 AM (index 0) to 1 AM next day (index 19).
 // Each step represents one hour; "2 AM" is when the day ends so the last
 // catchable hour is 1 AM (index 19).
+/** First catchable in-game hour (6 AM). Slider index 0 maps to this hour. */
+const GAME_DAY_START_HOUR = 6;
+/** Hour boundary used for AM/PM conversion (noon). */
+const NOON_HOUR = 12;
+
 const TIME_LABELS = [
 	"6 AM", "7 AM", "8 AM", "9 AM", "10 AM", "11 AM",
 	"12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM",
@@ -96,10 +101,10 @@ function stardewTimeToMinutes(t: string): number {
 	const m = t.match(/^(\d+)(AM|PM)$/);
 	if (!m) return 0;
 	let h = parseInt(m[1]);
-	if (m[2] === "PM" && h !== 12) h += 12;
-	if (m[2] === "AM" && h === 12) h = 0;
-	// Times before 6 AM are treated as "next day" (e.g. 2 AM end = 26:00)
-	if (m[2] === "AM" && h < 6) h += 24;
+	if (m[2] === "PM" && h !== NOON_HOUR) h += NOON_HOUR;
+	if (m[2] === "AM" && h === NOON_HOUR) h = 0;
+	// Times before GAME_DAY_START_HOUR are treated as "next day" (e.g. 2 AM end = 26:00)
+	if (m[2] === "AM" && h < GAME_DAY_START_HOUR) h += 24;
 	return h * 60;
 }
 
@@ -109,8 +114,8 @@ function isAvailableAtHour(timeRange: string, sliderIndex: number): boolean {
 	const [startStr, endStr] = timeRange.split(" - ");
 	const start = stardewTimeToMinutes(startStr);
 	const end = stardewTimeToMinutes(endStr);
-	// Slider index 0 = 6 AM = 360 min, index 1 = 7 AM = 420 min, …
-	const current = (sliderIndex + 6) * 60;
+	// Slider index 0 = GAME_DAY_START_HOUR, index 1 = GAME_DAY_START_HOUR + 1, …
+	const current = (sliderIndex + GAME_DAY_START_HOUR) * 60;
 	return current >= start && current < end;
 }
 
