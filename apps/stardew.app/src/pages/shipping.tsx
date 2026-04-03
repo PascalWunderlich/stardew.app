@@ -133,7 +133,13 @@ export default function Shipping() {
 			return [polycultureCount, monocultureAchieved, basicShippedCount];
 		}, [activePlayer, gameVersion]);
 
-	const getAchievementProgress = (name: string) => {
+
+	const achievements_shipping = useMemo(
+		() => Object.values(achievements).filter((a) => a.description.includes("Ship")),
+		[],
+	);
+
+		const getAchievementProgress = (name: string) => {
 		let completed = false;
 		let additionalDescription = "";
 
@@ -161,19 +167,22 @@ export default function Shipping() {
 	};
 
 	// Calculate completedCount based on filtered items
-	const completedCount = Object.values(typedShippingItems)
-		.filter((i) => {
-			// Clam is excluded in 1.6, so we won't show it
-			if (i.itemID === "372") return !semverGte(gameVersion, "1.6.0");
-			return true;
-		})
-		.filter((i) => semverGte(gameVersion, i.minVersion))
-		.filter((i) => {
-			if (_seasonFilter === "all") return true;
-			if (i.seasons.length === 0) return true;
-			return i.seasons.includes(_seasonFilter);
-		})
-		.filter((i) => i.itemID in basicShipped).length;
+	const completedCount = useMemo(
+		() =>
+			Object.values(typedShippingItems)
+				.filter((i) => {
+					if (i.itemID === "372") return !semverGte(gameVersion, "1.6.0");
+					return true;
+				})
+				.filter((i) => semverGte(gameVersion, i.minVersion))
+				.filter((i) => {
+					if (_seasonFilter === "all") return true;
+					if (i.seasons.length === 0) return true;
+					return i.seasons.includes(_seasonFilter);
+				})
+				.filter((i) => i.itemID in basicShipped).length,
+		[gameVersion, _seasonFilter, basicShipped],
+	);
 
 	return (
 		<>
@@ -216,8 +225,7 @@ export default function Shipping() {
 								</AccordionTrigger>
 								<AccordionContent asChild>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-										{Object.values(achievements)
-											.filter((a) => a.description.includes("Ship"))
+										{achievements_shipping
 											.map((achievement) => {
 												const { completed, additionalDescription } =
 													getAchievementProgress(achievement.name);

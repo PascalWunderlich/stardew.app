@@ -86,6 +86,12 @@ export default function Crafting() {
 		}
 	}, [activePlayer]);
 
+	
+	const achievements_crafting = useMemo(
+		() => Object.values(achievements).filter((a) => a.description.includes("Craft")),
+		[],
+	);
+
 	// calculate craftedCount here (all values of 2)
 	const craftedCount = useMemo(() => {
 		if (!activePlayer || !activePlayer.crafting?.recipes) return 0;
@@ -168,8 +174,7 @@ export default function Crafting() {
 								</AccordionTrigger>
 								<AccordionContent asChild>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-										{Object.values(achievements)
-											.filter((a) => a.description.includes("Craft"))
+										{achievements_crafting
 											.map((achievement) => {
 												const { completed, additionalDescription } =
 													getAchievementProgress(achievement.name);

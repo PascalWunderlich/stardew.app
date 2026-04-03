@@ -8,7 +8,7 @@ import objects from "@/data/objects.json";
 
 import { usePlayers } from "@/contexts/players-context";
 import { usePreferences } from "@/contexts/preferences-context";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AchievementCard } from "@/components/cards/achievement-card";
 import { BooleanCard } from "@/components/cards/boolean-card";
@@ -23,13 +23,15 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Command, CommandInput } from "@/components/ui/command";
+import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useMultiSelect } from "@/contexts/multi-select-context";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
-import { IconClock, IconCloud, IconMapPin } from "@tabler/icons-react";
+import { IconCloud, IconMapPin } from "@tabler/icons-react";
 
 const semverGte = require("semver/functions/gte");
 
@@ -78,23 +80,39 @@ const seasons = [
 	},
 ];
 
-const times = [
-	{ value: "all", label: "All Times" },
-	{ value: "6AM - 11AM", label: "6AM - 11AM" },
-	{ value: "6AM - 12AM", label: "6AM - 12AM" },
-	{ value: "6AM - 1PM", label: "6AM - 1PM" },
-	{ value: "6AM - 2AM", label: "6AM - 2AM" },
-	{ value: "6AM - 2PM", label: "6AM - 2PM" },
-	{ value: "6AM - 7PM", label: "6AM - 7PM" },
-	{ value: "6AM - 8PM", label: "6AM - 8PM" },
-	{ value: "8AM - 6PM", label: "8AM - 6PM" },
-	{ value: "9AM - 2AM", label: "9AM - 2AM" },
-	{ value: "12PM - 2AM", label: "12PM - 2AM" },
-	{ value: "12PM - 4PM", label: "12PM - 4PM" },
-	{ value: "4PM - 2AM", label: "4PM - 2AM" },
-	{ value: "6PM - 2AM", label: "6PM - 2AM" },
-	{ value: "10PM - 2AM", label: "10PM - 2AM" },
+// In-game hours from 6 AM (index 0) to 1 AM next day (index 19).
+// Each step represents one hour; "2 AM" is when the day ends so the last
+// catchable hour is 1 AM (index 19).
+const TIME_LABELS = [
+	"6 AM", "7 AM", "8 AM", "9 AM", "10 AM", "11 AM",
+	"12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM",
+	"6 PM", "7 PM", "8 PM", "9 PM", "10 PM", "11 PM",
+	"12 AM", "1 AM",
 ];
+
+/** Converts a Stardew time string like "6AM" or "2AM" to minutes since midnight.
+ *  "2AM" used as an end time means next-day 2 AM (26 h from midnight). */
+function stardewTimeToMinutes(t: string): number {
+	const m = t.match(/^(\d+)(AM|PM)$/);
+	if (!m) return 0;
+	let h = parseInt(m[1]);
+	if (m[2] === "PM" && h !== 12) h += 12;
+	if (m[2] === "AM" && h === 12) h = 0;
+	// Times before 6 AM are treated as "next day" (e.g. 2 AM end = 26:00)
+	if (m[2] === "AM" && h < 6) h += 24;
+	return h * 60;
+}
+
+/** Returns true if the given slider index (0 = 6 AM … 19 = 1 AM) falls within
+ *  the fish's time window, e.g. "6AM - 2AM". */
+function isAvailableAtHour(timeRange: string, sliderIndex: number): boolean {
+	const [startStr, endStr] = timeRange.split(" - ");
+	const start = stardewTimeToMinutes(startStr);
+	const end = stardewTimeToMinutes(endStr);
+	// Slider index 0 = 6 AM = 360 min, index 1 = 7 AM = 420 min, …
+	const current = (sliderIndex + 6) * 60;
+	return current >= start && current < end;
+}
 
 const locations = [
 	{ value: "all", label: "All Locations" },
@@ -145,7 +163,8 @@ export default function Fishing() {
 	const [_filter, setFilter] = useState("all");
 	const [_weatherFilter, setWeatherFilter] = useState("both");
 	const [_seasonFilter, setSeasonFilter] = useState("all");
-	const [_timeFilter, setTimeFilter] = useState("all");
+	const [timeFilterEnabled, setTimeFilterEnabled] = useState(false);
+	const [timeSliderIndex, setTimeSliderIndex] = useState(0); // 0 = 6 AM
 	const [_locationFilter, setLocationFilter] = useState("all");
 
 	const [gameVersion, setGameVersion] = useState("1.6.0");
@@ -197,6 +216,68 @@ export default function Fishing() {
 		}
 		return { completed, additionalDescription };
 	};
+
+	// Memoize the achievement list so it isn't re-filtered on every render
+	const fishingAchievements = useMemo(
+		() => Object.values(achievements).filter((a) => a.description.includes("fish")),
+		[],
+	);
+
+	// Memoize the full filtered + sorted fish list
+	const filteredFish = useMemo(
+		() =>
+			Object.values(fishes)
+				.filter((f) => semverGte(gameVersion, f.minVersion))
+				.filter((f) => {
+					if (!search) return true;
+					const name = objects[f.itemID as keyof typeof objects].name;
+					return name.toLowerCase().includes(search.toLowerCase());
+				})
+				.filter((f) => {
+					if (_filter === "0") {
+						return !fishCaught.has(f.itemID.toString());
+					} else if (_filter === "2") {
+						return fishCaught.has(f.itemID.toString());
+					}
+					return true;
+				})
+				.filter((f) => {
+					if ("weather" in f && f.trapFish === false) {
+						if (_weatherFilter === "both") return true;
+						if (_weatherFilter === "Sunny") {
+							return f.weather === "Sunny" || f.weather === "Both";
+						} else if (_weatherFilter === "Rainy") {
+							return f.weather === "Rainy" || f.weather === "Both";
+						} else if (_weatherFilter === "Both") {
+							return true;
+						}
+					}
+					return true;
+				})
+				.filter((f) => {
+					if ("seasons" in f && f.trapFish === false) {
+						if (_seasonFilter === "all") return true;
+						return f.seasons.includes(_seasonFilter);
+					}
+					return true;
+				})
+				.filter((f) => {
+					if (!timeFilterEnabled) return true;
+					if ("time" in f && f.trapFish === false) {
+						return isAvailableAtHour(f.time, timeSliderIndex);
+					}
+					return true;
+				})
+				.filter((f) => {
+					if ("locations" in f) {
+						if (_locationFilter === "all") return true;
+						const locs = f.locations as string[];
+						return locs.some((l) => getLocationGroup(l) === _locationFilter);
+					}
+					return true;
+				}),
+		[gameVersion, search, _filter, fishCaught, _weatherFilter, _seasonFilter, timeFilterEnabled, timeSliderIndex, _locationFilter],
+	);
 
 	// Custom bulk action handler for fishing
 	const handleFishingBulkAction = async (
@@ -257,21 +338,18 @@ export default function Fishing() {
 								</AccordionTrigger>
 								<AccordionContent asChild>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-										{Object.values(achievements)
-											.filter((a) => a.description.includes("fish"))
-											.map((a) => {
-												const { completed, additionalDescription } =
-													getAchievementProgress(a.name);
-
-												return (
-													<AchievementCard
-														key={a.id}
-														achievement={a}
-														completed={completed}
-														additionalDescription={additionalDescription}
-													/>
-												);
-											})}
+										{fishingAchievements.map((a) => {
+											const { completed, additionalDescription } =
+												getAchievementProgress(a.name);
+											return (
+												<AchievementCard
+													key={a.id}
+													achievement={a}
+													completed={completed}
+													additionalDescription={additionalDescription}
+												/>
+											);
+										})}
 									</div>
 								</AccordionContent>
 							</AccordionItem>
@@ -318,7 +396,7 @@ export default function Fishing() {
 									</ToggleGroupItem>
 								</ToggleGroup>
 							</div>
-							<div className="flex flex-row items-center gap-2">
+							<div className="flex flex-row flex-wrap items-center gap-2">
 								<FilterSearch
 									title="Weather"
 									_filter={_weatherFilter}
@@ -330,15 +408,8 @@ export default function Fishing() {
 									title="Season"
 									_filter={_seasonFilter}
 									data={seasons}
-									icon={IconClock}
+									icon={IconCloud}
 									setFilter={setSeasonFilter}
-								/>
-								<FilterSearch
-									title="Time"
-									_filter={_timeFilter}
-									data={times}
-									icon={IconClock}
-									setFilter={setTimeFilter}
 								/>
 								<FilterSearch
 									title="Location"
@@ -381,6 +452,40 @@ export default function Fishing() {
 								)}
 							</div>
 						</div>
+						{/* Time Filter Row */}
+						<div className="flex items-center gap-3 rounded-md border border-neutral-200 px-4 py-2 dark:border-neutral-800">
+							<Checkbox
+								id="time-filter-toggle"
+								checked={timeFilterEnabled}
+								onCheckedChange={(checked) =>
+									setTimeFilterEnabled(checked === true)
+								}
+							/>
+							<label
+								htmlFor="time-filter-toggle"
+								className="cursor-pointer select-none text-sm text-neutral-500 dark:text-neutral-400"
+							>
+								Filter by in-game time:
+							</label>
+							<div
+								className={cn(
+									"flex flex-1 items-center gap-3",
+									!timeFilterEnabled && "pointer-events-none opacity-40",
+								)}
+							>
+								<Slider
+									min={0}
+									max={TIME_LABELS.length - 1}
+									step={1}
+									value={[timeSliderIndex]}
+									onValueChange={([v]) => setTimeSliderIndex(v)}
+									className="max-w-xs"
+								/>
+								<span className="w-14 text-sm font-medium text-neutral-900 dark:text-neutral-50">
+									{TIME_LABELS[timeSliderIndex]}
+								</span>
+							</div>
+						</div>
 						{/* Search Bar Row */}
 						<div className="mt-2 w-full">
 							<Command className="w-full border border-b-0 dark:border-neutral-800">
@@ -392,71 +497,18 @@ export default function Fishing() {
 						</div>
 						{/* Fish Cards */}
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-							{Object.values(fishes)
-								.filter((f) => semverGte(gameVersion, f.minVersion))
-								.filter((f) => {
-									if (!search) return true;
-									const name = objects[f.itemID as keyof typeof objects].name;
-									return name.toLowerCase().includes(search.toLowerCase());
-								})
-								.filter((f) => {
-									if (_filter === "0") {
-										return !fishCaught.has(f.itemID.toString()); // uncaught
-									} else if (_filter === "2") {
-										return fishCaught.has(f.itemID.toString()); // caught
-									} else return true; // all
-								})
-								.filter((f) => {
-									if ("weather" in f && f.trapFish === false) {
-										if (_weatherFilter === "both") {
-											return true;
-										} else {
-											if (_weatherFilter === "Sunny") {
-												return f.weather === "Sunny" || f.weather === "Both";
-											} else if (_weatherFilter === "Rainy") {
-												return f.weather === "Rainy" || f.weather === "Both";
-											} else if (_weatherFilter === "Both") {
-												return true;
-											}
-										}
-									} else return true;
-								})
-								.filter((f) => {
-									if ("seasons" in f && f.trapFish === false) {
-										if (_seasonFilter === "all") return true;
-										return f.seasons.includes(_seasonFilter);
-									}
-									return true;
-								})
-								.filter((f) => {
-									if ("time" in f && f.trapFish === false) {
-										if (_timeFilter === "all") return true;
-										return f.time === _timeFilter;
-									}
-									return true;
-								})
-								.filter((f) => {
-									if ("locations" in f) {
-										if (_locationFilter === "all") return true;
-										const locs = f.locations as string[];
-										return locs.some(
-											(l) => getLocationGroup(l) === _locationFilter,
-										);
-									}
-									return true;
-								})
-								.map((f) => (
-									<BooleanCard
-										key={f.itemID}
-										item={f as FishType}
-										completed={fishCaught.has(f.itemID.toString())}
-										setIsOpen={setIsOpen}
-										setObject={setFish}
-										type="fish"
-										setPromptOpen={setPromptOpen}
-										show={show}
-									/>
-								))}
+							{filteredFish.map((f) => (
+								<BooleanCard
+									key={f.itemID}
+									item={f as FishType}
+									completed={fishCaught.has(f.itemID.toString())}
+									setIsOpen={setIsOpen}
+									setObject={setFish}
+									type="fish"
+									setPromptOpen={setPromptOpen}
+									show={show}
+								/>
+							))}
 						</div>
 					</section>
 				</div>
