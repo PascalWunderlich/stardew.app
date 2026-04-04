@@ -67,10 +67,11 @@ export default async function handler(
 	// Save every parsed player to the DB (upsert).
 	for (const player of players) {
 		if (player._id) {
+			const { raccoon: _raccoon, rarecrows: _rarecrows, animals: _animals, ...dbPlayer } = player;
 			await db
 				.insert(schema.saves)
-				.values({ _id: player._id, user_id: uid, ...player })
-				.onDuplicateKeyUpdate({ set: player });
+				.values({ _id: player._id, user_id: uid, ...dbPlayer })
+				.onDuplicateKeyUpdate({ set: dbPlayer });
 		}
 	}
 

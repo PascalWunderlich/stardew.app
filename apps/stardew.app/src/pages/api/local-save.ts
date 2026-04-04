@@ -36,7 +36,9 @@ async function listSaves(res: NextApiResponse) {
 }
 
 async function loadSave(req: NextApiRequest, res: NextApiResponse) {
-	const { saveName } = JSON.parse(req.body ?? "{}");
+	const body =
+		typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body;
+	const { saveName } = body ?? {};
 
 	if (!saveName || typeof saveName !== "string" || !isValidSaveName(saveName)) {
 		return res.status(400).json({ error: "Invalid save name." });

@@ -1,0 +1,3 @@
+$ turbo dev --filter=stardew.app --ui=stream
+turbo 2.4.0
+

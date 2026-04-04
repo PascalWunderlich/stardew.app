@@ -251,3 +251,7 @@ Below are some incredible people that the website wouldn't be without today.
 2. Run `bun install` to install project dependencies.
 3. Ensure MySQL is running locally.
 4. Run `bun run prepLocalEnv` to create the database and sync the schema for local testing.
+
+## One-Click Startup
+
+On Windows, double-click `start-local.cmd` from the repository root to start the dev server and sync your local save.

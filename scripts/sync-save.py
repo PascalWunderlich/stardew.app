@@ -235,6 +235,14 @@ def select_save(saves: list[str], previous: str | None) -> str:
         warn(f"Please enter a number between 1 and {len(saves)}.")
 
 
+def select_save_by_name(saves: list[str], save_name: str) -> str:
+    if save_name not in saves:
+        error(f"Specified save not found: {save_name}")
+        sys.exit(1)
+    info(f"Using specified save: {save_name}")
+    return save_name
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -266,6 +274,10 @@ def main() -> int:
         action="store_true",
         help="Do not open a browser window after the first successful sync",
     )
+    parser.add_argument(
+        "--save-name",
+        help="Skip the interactive prompt and sync the specified save name",
+    )
     args = parser.parse_args()
 
     print(_color(35, "\n=== stardew.app Save Sync ===\n"))
@@ -278,7 +290,10 @@ def main() -> int:
 
     # 3. Discover and select save
     saves = list_saves()
-    save_name = select_save(saves, cfg.get("save_name"))
+    if args.save_name:
+        save_name = select_save_by_name(saves, args.save_name)
+    else:
+        save_name = select_save(saves, cfg.get("save_name"))
     cfg["save_name"] = save_name
     save_config(cfg)
 

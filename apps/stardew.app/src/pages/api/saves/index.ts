@@ -129,14 +129,15 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 	for (const player of players) {
 		try {
 			if (player._id) {
+				const { raccoon: _raccoon, rarecrows: _rarecrows, animals: _animals, ...dbPlayer } = player;
 				await db
 					.insert(schema.saves)
 					.values({
 						_id: player._id,
 						user_id: uid,
-						...player,
+						...dbPlayer,
 					})
-					.onDuplicateKeyUpdate({ set: player });
+					.onDuplicateKeyUpdate({ set: dbPlayer });
 			}
 			res.status(200).end();
 		} catch (e) {

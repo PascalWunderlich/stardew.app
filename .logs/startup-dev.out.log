@@ -1,0 +1,38 @@
+• Packages in scope: stardew.app
+• Running dev in 1 packages
+• Remote caching disabled
+stardew.app:dev: cache bypass, force executing b05b3b024b79883c
+stardew.app:dev: $ next dev
+stardew.app:dev:  ⚠ Port 3000 is in use by an unknown process, using available port 3002 instead.
+stardew.app:dev:    ▲ Next.js 15.5.7
+stardew.app:dev:    - Local:        http://localhost:3002
+stardew.app:dev:    - Network:      http://192.168.2.129:3002
+stardew.app:dev:    - Environments: .env.local
+stardew.app:dev: 
+stardew.app:dev:  ✓ Starting...
+stardew.app:dev:  ○ Compiling /instrumentation ...
+stardew.app:dev:  ⚠ ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+stardew.app:dev: Critical dependency: the request of a dependency is an expression
+stardew.app:dev: 
+stardew.app:dev: Import trace for requested module:
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/dist/index.js
+stardew.app:dev: ../../node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+stardew.app:dev: ../../node_modules/@sentry/node/build/cjs/index.js
+stardew.app:dev: ../../node_modules/@sentry/nextjs/build/cjs/index.server.js
+stardew.app:dev:  ✓ Ready in 8.3s
+sstardew.app:dev:  ⚠ ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+stardew.app:dev: Critical dependency: the request of a dependency is an expression
+stardew.app:dev: 
+stardew.app:dev: Import trace for requested module:
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+stardew.app:dev: ../../node_modules/@prisma/instrumentation/dist/index.js
+stardew.app:dev: ../../node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+stardew.app:dev: ../../node_modules/@sentry/node/build/cjs/index.js
+stardew.app:dev: ../../node_modules/@sentry/nextjs/build/cjs/index.server.js
