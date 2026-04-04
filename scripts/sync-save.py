@@ -179,7 +179,7 @@ def import_save(xml: str, uid: str | None, host: str) -> dict:
         url,
         data=xml.encode("utf-8"),
         headers={"Content-Type": "text/plain; charset=utf-8"},
-        timeout=60,
+        timeout=30,
     )
 
     if resp.status_code == 404:
@@ -284,7 +284,9 @@ def main() -> int:
 
     uid: str | None = cfg.get("uid")
     save_file = get_save_file(save_name)
-    last_mtime: float = 0.0
+    # Initialize to -1 so the first iteration always triggers an import,
+    # giving the user immediate feedback when the script starts.
+    last_mtime: float = -1.0
     browser_opened = False
 
     info(f"Watching: {save_file}")
@@ -304,7 +306,11 @@ def main() -> int:
             continue
 
         if current_mtime != last_mtime:
-            info("Change detected – importing save…")
+            info(
+                "Importing save…"
+                if last_mtime == -1.0
+                else "Change detected – importing save…"
+            )
 
             # Verify the server is up before attempting the import
             if not check_server(args.host):
@@ -342,11 +348,6 @@ def main() -> int:
                 error(f"Sync failed: {exc}")
                 if args.once:
                     return 1
-
-        elif last_mtime == 0:
-            # First iteration, no change yet – just log that we're watching
-            info("Waiting for save file changes…")
-            last_mtime = current_mtime  # treat current as baseline
 
         if args.once:
             break

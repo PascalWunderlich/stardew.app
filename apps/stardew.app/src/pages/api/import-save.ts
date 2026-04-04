@@ -57,11 +57,13 @@ export default async function handler(
 
 	// Set the uid cookie in the response so a browser that follows the link
 	// returned by the sync script automatically picks up the same identity.
+	// Omitting 'domain' lets the browser apply it to the current origin
+	// (localhost in dev), avoiding issues if the server runs on 127.0.0.1 or
+	// a local network address.
 	setCookie("uid", uid, {
 		req,
 		res,
 		maxAge: 60 * 60 * 24 * 365,
-		domain: "localhost",
 	});
 
 	// Save every parsed player to the DB (upsert).

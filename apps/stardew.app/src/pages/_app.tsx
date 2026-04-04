@@ -31,9 +31,12 @@ export default function App({ Component, pageProps }: AppProps) {
 
 		const expires = new Date();
 		expires.setFullYear(expires.getFullYear() + 1);
-		document.cookie = `uid=${_uid}; domain=localhost; path=/; expires=${expires.toUTCString()}`;
+		// SameSite=Strict prevents CSRF; Secure is intentionally omitted because
+		// this only runs in the local dev environment (HTTP localhost).
+		document.cookie = `uid=${_uid}; SameSite=Strict; path=/; expires=${expires.toUTCString()}`;
 
-		// Remove _uid from the URL without triggering a full navigation
+		// Remove _uid from the URL without triggering a full navigation.
+		// router.replace and router.pathname are stable refs – only _uid triggers this.
 		const { _uid: _removed, ...rest } = router.query;
 		router.replace(
 			{ pathname: router.pathname, query: rest },
