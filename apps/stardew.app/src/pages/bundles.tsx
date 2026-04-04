@@ -123,9 +123,14 @@ type AccordionSectionProps = {
 	completedCount?: number;
 };
 
+type FilteredBundleItem = {
+	item: BundleItem | Randomizer;
+	originalIndex: number;
+};
+
 type FilteredBundle = {
 	bundleWithStatus: BundleWithStatus;
-	items: (BundleItem | Randomizer)[];
+	items: FilteredBundleItem[];
 	matchesSearch: boolean;
 };
 
@@ -727,18 +732,26 @@ export default function Bundles() {
 								return {
 									bundleWithStatus: bundleWithStatus,
 									items: bundleWithStatus.bundle.items
-										.filter((_, idx) => {
+										.map((item, originalIndex): FilteredBundleItem => ({
+											item,
+											originalIndex,
+										}))
+										.filter(({ originalIndex }) => {
 											switch (filter) {
 												case "0":
-													return !bundleWithStatus.bundleStatus[idx];
+													return !bundleWithStatus.bundleStatus[
+														originalIndex
+													];
 												case "2":
-													return bundleWithStatus.bundleStatus[idx];
+													return bundleWithStatus.bundleStatus[
+														originalIndex
+													];
 												case "all":
 												default:
 													return true;
 											}
 										})
-										.filter((item) => {
+										.filter(({ item }) => {
 											if (_seasonFilter === "all") return true;
 											if (isRandomizer(item)) {
 												// Show randomizer if any option is obtainable in the season
@@ -756,7 +769,7 @@ export default function Bundles() {
 											if (!seasons || seasons.length === 0) return true;
 											return seasons.includes(_seasonFilter);
 										})
-										.filter((item) => {
+										.filter(({ item }) => {
 											if (bundleMatched) {
 												return true;
 											}
@@ -799,29 +812,41 @@ export default function Bundles() {
 											onChangeBundle={SwapBundle}
 										>
 											{filteredBundle.items ? (
-												filteredBundle.items.map((item, index: number) => {
-													if (isRandomizer(item)) {
-														// Guard clause for type coercion
-														return <></>;
-													}
-													const BundleItemWithLocation: BundleItemWithLocation =
-														{
-															...item,
-															index: index,
-															bundleID: bundleWithStatus.bundle.name,
-														};
-													return (
-														<BundleItemCard
-															key={item.itemID + "-" + index}
-															item={BundleItemWithLocation}
-															setIsOpen={setIsOpen}
-															completed={bundleWithStatus.bundleStatus[index]}
-															setObject={setObject}
-															show={show}
-															setPromptOpen={setPromptOpen}
-														/>
-													);
-												})
+												filteredBundle.items.map(
+													({ item, originalIndex }) => {
+														if (isRandomizer(item)) {
+															// Guard clause for type coercion
+															return <></>;
+														}
+														const BundleItemWithLocation: BundleItemWithLocation =
+															{
+																...item,
+																index: originalIndex,
+																bundleID:
+																	bundleWithStatus.bundle.name,
+															};
+														return (
+															<BundleItemCard
+																key={
+																	item.itemID +
+																	"-" +
+																	originalIndex
+																}
+																item={BundleItemWithLocation}
+																setIsOpen={setIsOpen}
+																completed={
+																	bundleWithStatus
+																		.bundleStatus[
+																		originalIndex
+																	]
+																}
+																setObject={setObject}
+																show={show}
+																setPromptOpen={setPromptOpen}
+															/>
+														);
+													},
+												)
 											) : (
 												<>error</>
 											)}
