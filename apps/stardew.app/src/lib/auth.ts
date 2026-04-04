@@ -5,7 +5,7 @@ import { deleteCookie } from "cookies-next";
  * Used by both the desktop top-bar and the mobile navigation drawer.
  */
 export function logoutUser() {
-	const domain = parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
+	const domain = process.env.NEXT_PUBLIC_DEVELOPMENT === "1"
 		? "localhost"
 		: "stardew.app";
 
