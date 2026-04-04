@@ -284,8 +284,8 @@ def main() -> int:
 
     uid: str | None = cfg.get("uid")
     save_file = get_save_file(save_name)
-    # None means we haven't synced yet; the first iteration always triggers an
-    # import so the user gets immediate feedback when the script starts.
+    # last_mtime is None until the first successful import; any real st_mtime
+    # will differ from None so the first iteration always triggers an import.
     last_mtime: float | None = None
     browser_opened = False
 

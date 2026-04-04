@@ -36,14 +36,16 @@ export default function App({ Component, pageProps }: AppProps) {
 		document.cookie = `uid=${_uid}; SameSite=Strict; path=/; expires=${expires.toUTCString()}`;
 
 		// Remove _uid from the URL without triggering a full navigation.
-		// router.replace and router.pathname are stable refs – only _uid triggers this.
+		// router.replace and router.pathname are stable across renders (Next.js
+		// router identity is stable); only the _uid param value matters here.
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only _uid should re-trigger
 		const { _uid: _removed, ...rest } = router.query;
 		router.replace(
 			{ pathname: router.pathname, query: rest },
 			undefined,
 			{ shallow: true },
 		);
-	}, [router.query._uid]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [router.query._uid]);
 
 	const api = useSWR<User>(
 		"/api",

@@ -50,7 +50,8 @@ export default async function handler(
 
 	// Determine UID: prefer explicit ?uid= query param (Python sync passes this
 	// on subsequent runs to keep data under the same identity), then generate new.
-	const uid = (req.query.uid as string)?.trim() || crypto.randomBytes(16).toString("hex");
+	const providedUid = (req.query.uid as string)?.trim();
+	const uid = providedUid || crypto.randomBytes(16).toString("hex");
 
 	// Set the uid cookie in the response so a browser that follows the link
 	// returned by the sync script automatically picks up the same identity.
