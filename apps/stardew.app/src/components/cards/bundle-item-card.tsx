@@ -55,8 +55,6 @@ export const BundleItemCard = ({
 	setPromptOpen,
 }: BundleItemCardProps) => {
 	const { activePlayer, patchPlayer } = usePlayers();
-	// let itemType = "O"; //Todo add item types to object data files, and use them here to hotswap data source
-	// let dataSource = objects;
 	let iconURL: string;
 	let name: string;
 	let description: string | undefined;

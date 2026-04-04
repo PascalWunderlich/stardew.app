@@ -325,7 +325,7 @@ export function parseGeneral(
 		return result;
 	} catch (e) {
 		if (process.env.NODE_ENV === "development") {
-			console.log(e);
+			console.error(e);
 		}
 
 		if (e instanceof Error)

@@ -3,8 +3,8 @@ import useSWR from "swr";
 
 import type { User } from "@/components/top-bar";
 
-import { cn } from "@/lib/utils";
-import { deleteCookie } from "cookies-next";
+import { cn, fetcher } from "@/lib/utils";
+import { logoutUser } from "@/lib/auth";
 import { usePathname } from "next/navigation";
 import {
 	ChangeEvent,
@@ -55,8 +55,7 @@ export const MobileNav = ({
 }: Props) => {
 	const api = useSWR<User>(
 		"/api",
-		// @ts-expect-error
-		(...args) => fetch(...args).then((res) => res.json()),
+		fetcher<User>,
 		{ refreshInterval: 0, revalidateOnFocus: false },
 	);
 
@@ -239,35 +238,7 @@ export const MobileNav = ({
 											</Link>
 										</Button>
 
-										<Button
-											onClick={() => {
-												deleteCookie("token", {
-													maxAge: 0,
-													domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-														? "localhost"
-														: "stardew.app",
-												});
-												deleteCookie("uid", {
-													maxAge: 0,
-													domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-														? "localhost"
-														: "stardew.app",
-												});
-												deleteCookie("oauth_state", {
-													maxAge: 0,
-													domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-														? "localhost"
-														: "stardew.app",
-												});
-												deleteCookie("discord_user", {
-													maxAge: 0,
-													domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-														? "localhost"
-														: "stardew.app",
-												});
-												return (window.location.href = "/");
-											}}
-										>
+										<Button onClick={logoutUser}>
 											Log out
 										</Button>
 									</>

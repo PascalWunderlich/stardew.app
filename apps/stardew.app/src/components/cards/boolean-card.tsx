@@ -68,14 +68,11 @@ export const BooleanCard = ({
 }: BooleanCardProps) => {
 	const { activePlayer, patchPlayer } = usePlayers();
 	const { isMultiSelectMode, selectedItems, toggleItem } = useMultiSelect();
-	// let itemType = "O"; //Todo add item types to object data files, and use them here to hotswap data source
-	// let dataSource = objects;
 	let iconURL: string;
 	let name: string;
 	let description: string | null;
 	let minVersion: string;
 
-	// TODO: getObjectData(itemID, type? = "O", overrides?)
 	if (!objects[item.itemID as keyof typeof objects]) {
 		if (!overrides || Object.keys(overrides).length == 0) {
 			console.warn(`No object data for itemID ${item.itemID}`);
