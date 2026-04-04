@@ -176,13 +176,6 @@ export function parseSaveFile(xml: string) {
 			processedPlayers.push(processedPlayer);
 		});
 
-		// processedPlayers.forEach((p) =>
-		//   console.log(`Player: ${p.general.name} | powers:`, p.powers.collection),
-		// );
-
-		// // there isn't a powers column in our database yet
-		// throw new Error("Not Implemented");
-
 		return processedPlayers;
 	} catch (e) {
 		throw new Error(`${e}`);

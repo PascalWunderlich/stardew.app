@@ -9,6 +9,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * A typed SWR-compatible JSON fetcher that avoids the need for `@ts-expect-error` suppressions.
+ */
+export async function fetcher<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+	const res = await fetch(input, init);
+	return res.json() as Promise<T>;
+}
+
+/**
  * Get a list of all farmhands in the save file.
  *
  * @param {*} saveGame The entire save game object from `saveFile.SaveGame`

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
+import { fetcher } from "@/lib/utils";
 import { User } from "../top-bar";
 import { Button } from "../ui/button";
 import {
@@ -24,8 +25,7 @@ interface Props {
 export const BugReportDialog = ({ open, setOpen }: Props) => {
 	const api = useSWR<User>(
 		"/api",
-		// @ts-expect-error
-		(...args) => fetch(...args).then((res) => res.json()),
+		fetcher<User>,
 		{ refreshInterval: 0, revalidateOnFocus: false },
 	);
 
@@ -53,13 +53,11 @@ export const BugReportDialog = ({ open, setOpen }: Props) => {
 				</DialogDescription>
 				<form
 					onSubmit={async (event) => {
-						setLoading(true);
 						event.preventDefault();
+						setLoading(true);
 						const values = Object.fromEntries(
 							new FormData(event.target as HTMLFormElement).entries(),
 						);
-
-						setLoading(true);
 
 						const promise = fetch("/api/bug", {
 							headers: { "Content-Type": "application/json" },

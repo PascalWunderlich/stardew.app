@@ -29,6 +29,7 @@ import type { BundleWithStatus } from "@/types/bundles";
 import type { AnimalsData } from "@/types/data";
 import type { DeepPartial } from "react-hook-form";
 import { parseSaveFile } from "@/lib/file";
+import { fetcher } from "@/lib/utils";
 
 /** How often the auto-sync feature re-reads and uploads the save file (15 minutes). */
 export const AUTO_SYNC_INTERVAL_MS = 15 * 60 * 1000;
@@ -193,10 +194,7 @@ export function mergeDeep(target: any, ...sources: any[]): any {
 }
 
 export const PlayersProvider = ({ children }: { children: ReactNode }) => {
-	const api = useSWR<PlayerType[]>("/api/saves", (...args: any[]) =>
-		// @ts-expect-error
-		fetch(...args).then((res) => res.json()),
-	);
+	const api = useSWR<PlayerType[]>("/api/saves", fetcher<PlayerType[]>);
 	const [activePlayerId, setActivePlayerId] = useState<string>();
 	const players = useMemo(() => api.data ?? [], [api.data]);
 	const activePlayer = useMemo(
@@ -250,8 +248,6 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 						// Turns out, the same issue exists for rarecrows!
 						normalizedPatch.rarecrows = activePlayer.rarecrows;
 					}
-					// console.log("Normalizing patch:");
-					// console.dir(normalizedPatch);
 					await fetch(`/api/saves/${activePlayer._id}`, {
 						method: "PATCH",
 						body: JSON.stringify(normalizedPatch),
@@ -349,7 +345,6 @@ export const PlayersProvider = ({ children }: { children: ReactNode }) => {
 		setActivePlayerId(player._id);
 
 		if (typeof window !== "undefined") {
-			// console.log(`Setting player_id to '${player._id}'`);
 			window.localStorage.setItem("player_id", player._id);
 		}
 	}, []);

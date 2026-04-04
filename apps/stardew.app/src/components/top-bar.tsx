@@ -5,8 +5,10 @@ import useSWR from "swr";
 import packageJson from "../../package.json";
 const { version } = packageJson;
 
-import { deleteCookie } from "cookies-next";
 import { useContext, useEffect, useRef, useState } from "react";
+
+import { fetcher } from "@/lib/utils";
+import { logoutUser } from "@/lib/auth";
 
 import { PlayersContext } from "@/contexts/players-context";
 
@@ -42,8 +44,7 @@ export interface User {
 export function Topbar() {
 	const api = useSWR<User>(
 		"/api",
-		// @ts-expect-error
-		(...args) => fetch(...args).then((res) => res.json()),
+		fetcher<User>,
 		{ refreshInterval: 0, revalidateOnFocus: false },
 	);
 	const inputRef = useRef<HTMLInputElement | null>(null);
@@ -194,33 +195,7 @@ export function Topbar() {
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									data-umami-event="Log out"
-									onClick={() => {
-										deleteCookie("token", {
-											maxAge: 0,
-											domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-												? "localhost"
-												: "stardew.app",
-										});
-										deleteCookie("uid", {
-											maxAge: 0,
-											domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-												? "localhost"
-												: "stardew.app",
-										});
-										deleteCookie("oauth_state", {
-											maxAge: 0,
-											domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-												? "localhost"
-												: "stardew.app",
-										});
-										deleteCookie("discord_user", {
-											maxAge: 0,
-											domain: parseInt(process.env.NEXT_PUBLIC_DEVELOPMENT!)
-												? "localhost"
-												: "stardew.app",
-										});
-										return (window.location.href = "/");
-									}}
+									onClick={logoutUser}
 								>
 									Log out
 								</DropdownMenuItem>

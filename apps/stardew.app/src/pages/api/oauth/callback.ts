@@ -17,7 +17,7 @@ export default async function handler(
 		const state = getCookie("oauth_state", { req });
 		if (!state) {
 			res.status(400).end();
-			console.log("[OAuth] No state cookie");
+			console.error("[OAuth] No state cookie");
 			return;
 		}
 
@@ -26,7 +26,7 @@ export default async function handler(
 		if (!uid || typeof uid !== "string") {
 			res.status(400).end();
 			res.redirect("/");
-			console.log("[OAuth] No UID cookie");
+			console.error("[OAuth] No UID cookie");
 			return;
 		}
 
@@ -34,7 +34,7 @@ export default async function handler(
 		if (!code) {
 			res.status(400).end();
 			res.redirect("/");
-			console.log("[OAuth] No code");
+			console.error("[OAuth] No code");
 			return;
 		}
 
@@ -59,13 +59,11 @@ export default async function handler(
 
 		if (!discord.ok) {
 			res.status(400).end();
-			console.log("[OAuth] Discord error");
+			console.error("[OAuth] Discord error");
 			return;
 		}
 
 		const discordData = await discord.json();
-
-		console.log("discordData", discordData);
 
 		const discordUser = await fetch(`https://discord.com/api/users/@me`, {
 			headers: {
@@ -75,7 +73,7 @@ export default async function handler(
 
 		if (!discordUser.ok) {
 			res.status(400).end();
-			console.log("[OAuth] Discord user error");
+			console.error("[OAuth] Discord user error");
 			return;
 		}
 
@@ -134,16 +132,6 @@ export default async function handler(
 							cookie_secret: cookieSecret,
 						},
 					});
-				// await conn.execute(
-				//   "INSERT INTO Users (id, discord_id, discord_name, discord_avatar, cookie_secret) VALUES (?, ?, ?, ?, ?)",
-				//   [
-				//     uid as string,
-				//     discordUserData.id,
-				//     discordUserData.username,
-				//     discordUserData.avatar,
-				//     cookieSecret,
-				//   ],
-				// );
 				user = {
 					id: uid,
 					discord_id: discordUserData.id,
@@ -210,6 +198,6 @@ export default async function handler(
 		}
 	} catch (e: any) {
 		res.status(500).send(e.message);
-		console.log("[OAuth] Error", e);
+		console.error("[OAuth] Error", e);
 	}
 }

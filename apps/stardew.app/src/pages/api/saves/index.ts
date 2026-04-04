@@ -70,7 +70,6 @@ export async function getUID(
 		// everything is ok, so we return the uid
 		return uid as string;
 	} else {
-		console.log("Generating new UID...");
 		// no uid, so we create an anonymous one
 		uid = crypto.randomBytes(16).toString("hex");
 		setCookie("uid", uid, {
@@ -125,8 +124,6 @@ async function get(req: NextApiRequest, res: NextApiResponse) {
 }
 
 async function post(req: NextApiRequest, res: NextApiResponse) {
-	// console.log("Saving...");
-	// console.log(process.env.DATABASE_URL);
 	const uid = await getUID(req, res);
 	const players = JSON.parse(req.body) as Player[];
 	for (const player of players) {
@@ -143,25 +140,19 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 			}
 			res.status(200).end();
 		} catch (e) {
-			console.log(e);
+			console.error(e);
 			res.status(500).end();
 		}
 	}
 }
 
 async function _delete(req: NextApiRequest, res: NextApiResponse) {
-	// console.log("Deleting...");
 	const uid = await getUID(req, res);
 
 	if (!req.body) {
 		// delete all players
 		await db.delete(schema.saves).where(eq(schema.saves.user_id, uid));
-		// const result = await conn.execute("DELETE FROM Saves WHERE user_id = ?", [
-		//   uid,
-		// ]);
-		// console.log("[DEBUG:SAVES] DELETE | deleted all players with uid =", uid);
 	} else {
-		// console.log("[DEBUG:SAVES] DELETE | req.body =", req.body);
 		const { type } = JSON.parse(req.body);
 
 		if (type === "player") {
@@ -170,30 +161,14 @@ async function _delete(req: NextApiRequest, res: NextApiResponse) {
 			await db
 				.delete(schema.saves)
 				.where(and(eq(schema.saves.user_id, uid), eq(schema.saves._id, _id)));
-
-			// const result = await conn.execute(
-			//   "DELETE FROM Saves WHERE user_id = ? AND _id = ?",
-			//   [uid, _id],
-			// );
-
-			// console.log("[DEBUG:SAVES] DELETE | deleted one player with id =", _id);
 		} else {
 			// delete entire account
 			// delete players
 			await db.delete(schema.saves).where(eq(schema.saves.user_id, uid));
-			// const result = await conn.execute("DELETE FROM Saves WHERE user_id = ?", [
-			//   uid,
-			// ]);
 			// delete user
 			await db.delete(schema.users).where(eq(schema.users.id, uid));
-
-			// const result2 = await conn.execute("DELETE FROM Users WHERE id = ?", [
-			//   uid,
-			// ]);
-			// console.log("[DEBUG:SAVES] DELETE | deleted account with uid =", uid);
 		}
 	}
-	// console.log(result.rowsAffected)
 	res.status(204).end();
 }
 

@@ -1,42 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
-async function turnstile(token: string, ip: string | null) {
-	const formData = new URLSearchParams();
-
-	formData.append("secret", process.env.TURNSTILE_KEY as string);
-	formData.append("response", token);
-
-	if (ip) {
-		formData.append("remoteip", ip);
-	}
-
-	const url = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-
-	const result = await fetch(url, {
-		body: formData,
-		method: "POST",
-	});
-
-	return (await result.json()) as
-		| {
-				"success": true;
-				"challenge_ts": string;
-				"hostname": string;
-				"error-codes": string[];
-				"action": string;
-				"cdata": string;
-		  }
-		| {
-				"success": false;
-				"error-codes": [string, ...string[]];
-		  };
-}
-
-function codeblock(code: string, lang = "ts") {
-	return `\`\`\`${lang}
-${code}
-\`\`\``;
-}
+import { verifyTurnstile } from "./_lib/turnstile";
 
 async function post(req: NextApiRequest, res: NextApiResponse) {
 	const body = req.body;
@@ -45,7 +8,7 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
 		req.socket.remoteAddress ??
 		null;
 
-	const outcome = await turnstile(body.turnstile, ip);
+	const outcome = await verifyTurnstile(body.turnstile, ip);
 
 	if (!outcome.success) {
 		return res.status(400).end();
