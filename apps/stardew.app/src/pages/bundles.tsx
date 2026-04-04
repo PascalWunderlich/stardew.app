@@ -812,15 +812,13 @@ export default function Bundles() {
 											onChangeBundle={SwapBundle}
 										>
 											{filteredBundle.items ? (
-												filteredBundle.items.map(
-													({ item, originalIndex }) => {
-														if (isRandomizer(item)) {
-															// Guard clause for type coercion
-															return <></>;
-														}
+												filteredBundle.items
+													.filter(({ item }) => !isRandomizer(item))
+													.map(({ item, originalIndex }) => {
+														const bundleItem = item as BundleItem;
 														const BundleItemWithLocation: BundleItemWithLocation =
 															{
-																...item,
+																...bundleItem,
 																index: originalIndex,
 																bundleID:
 																	bundleWithStatus.bundle.name,
@@ -828,7 +826,7 @@ export default function Bundles() {
 														return (
 															<BundleItemCard
 																key={
-																	item.itemID +
+																	bundleItem.itemID +
 																	"-" +
 																	originalIndex
 																}
@@ -845,8 +843,7 @@ export default function Bundles() {
 																setPromptOpen={setPromptOpen}
 															/>
 														);
-													},
-												)
+													})
 											) : (
 												<>error</>
 											)}

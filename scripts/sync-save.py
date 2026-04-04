@@ -59,7 +59,7 @@ CONFIG_FILE = Path.home() / ".config" / "stardew-app-sync" / "config.json"
 # ---------------------------------------------------------------------------
 
 def _color(code: int, text: str) -> str:
-    """Wrap text in ANSI colour code when stdout is a TTY."""
+    """Wrap text in ANSI color code when stdout is a TTY."""
     if sys.stdout.isatty():
         return f"\033[{code}m{text}\033[0m"
     return text
@@ -284,9 +284,9 @@ def main() -> int:
 
     uid: str | None = cfg.get("uid")
     save_file = get_save_file(save_name)
-    # Initialize to -1 so the first iteration always triggers an import,
-    # giving the user immediate feedback when the script starts.
-    last_mtime: float = -1.0
+    # None means we haven't synced yet; the first iteration always triggers an
+    # import so the user gets immediate feedback when the script starts.
+    last_mtime: float | None = None
     browser_opened = False
 
     info(f"Watching: {save_file}")
@@ -308,7 +308,7 @@ def main() -> int:
         if current_mtime != last_mtime:
             info(
                 "Importing save…"
-                if last_mtime == -1.0
+                if last_mtime is None
                 else "Change detected – importing save…"
             )
 
